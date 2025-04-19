@@ -2,35 +2,41 @@ import { useEffect, useState,useRef } from 'react';
 
 export default function MyCanvasComponent() {
 
-const mouseCoord= useRef<{clientX:number,clientY:number}>({clientX:0,clientY:0})
-const [painting,setPainting]= useState(false)
+const mouseCoord= useRef({offsetX:0,offsetY:0})
+const painting= useRef(false)
+const [weight,setWeight] = useState(4)
+const [color,setColor] = useState("red")
 
 
 useEffect(()=>{
   const canvasPointer = document?.querySelector("#myCanvas")
+  const ctx = canvasPointer.getContext("2d") 
   
 
   function startTracking(e:MouseEvent){
     e.preventDefault()
-    setPainting(true)
+    painting.current=true
+    mouseCoord.current={offsetX:e.offsetX,offsetY:e.offsetY}
+    drawLine(e)
   }
   function stopTracking(e){
     e.preventDefault()
-    setPainting(false)
+    painting.current=false
   }
-  function draw(e){
+  function drawLine(e){
     e.preventDefault()
-    if(painting==false) return 
-    const ctx = canvasPointer.getContext("2d") 
-    ctx.lineWidth=10
+    if(!painting.current) return 
+    ctx.lineWidth=weight
     ctx.lineCap="round"
+    // ctx.lineJoin= "line"
     ctx.beginPath();
-    ctx.moveTo(mouseCoord.current.clientX, mouseCoord.current.clientY);
-    ctx.lineTo(e.clientX, e.clientY);
+    ctx.moveTo(mouseCoord.current.offsetX, mouseCoord.current.offsetY);
+    ctx.lineTo(e.offsetX, e.offsetY);
+    mouseCoord.current={offsetX:e.offsetX,offsetY:e.offsetY}
+    ctx.strokeStyle= color
     ctx.stroke();
-
-    mouseCoord.current={clientX:e.clientX,clientY:e.clientY}
-    console.log(mouseCoord.current, painting)
+    
+    console.log(e, painting)
   }
  
 
@@ -38,7 +44,7 @@ useEffect(()=>{
   
   canvasPointer?.addEventListener("mouseup",stopTracking)
   
-  canvasPointer?.addEventListener("mousemove",draw)
+  canvasPointer?.addEventListener("mousemove",drawLine)
   
   return()=>{
     canvasPointer?.removeEventListener("mousedown",startTracking)
@@ -47,13 +53,13 @@ useEffect(()=>{
     
     canvasPointer?.removeEventListener("mousemove",draw)
   }
-},[painting])
+},[])
   
 
   return (
-    <div>
-      <canvas  width={1080}
-  height={1920}className="h-[1920px] w-[1080px] ring-2 ring-amber-500 m-32" id="myCanvas" ></canvas>
+    <div className='h-screen w-screen border-2 border-solid border-red-500'>
+      <canvas height={1080} width={1920}
+ className="border-2 border-solid border-red-500 h-full w-full" id="myCanvas" ></canvas>
     </div>
   );
 }
