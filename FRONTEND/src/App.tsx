@@ -1,43 +1,64 @@
-import { useEffect, useState,useRef } from 'react';
+import { useEffect, useState,useRef} from 'react';
 
 export default function MyCanvasComponent() {
 
-const mouseCoord= useRef({offsetX:0,offsetY:0})
+const mouseCoord= useRef({clientX:0,clientY:0})
 const painting= useRef(false)
 const [weight,setWeight] = useState(4)
 const [color,setColor] = useState("red")
+const [scaled,setScaled]= useState(1)
 
 
 useEffect(()=>{
-  const canvasPointer = document?.querySelector("#myCanvas")
-  const ctx = canvasPointer.getContext("2d") 
+  const canvasPointer:HTMLElement = document?.querySelector("#myCanvas")
+  const mainDiv = document?.querySelector("#parentDiv")
+  canvasPointer.height = mainDiv.offsetHeight;
+  canvasPointer.width  = mainDiv.offsetWidth;
   
 
-  function startTracking(e:MouseEvent){
-    e.preventDefault()
-    painting.current=true
-    mouseCoord.current={offsetX:e.offsetX,offsetY:e.offsetY}
-    drawLine(e)
+  const ctx = canvasPointer.getContext("2d") 
+  
+ 
+
+  function getCanvasRelativeCoords(e: MouseEvent) {
+    const rect = canvasPointer.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
   }
+  
+  function startTracking(e: MouseEvent) {
+    e.preventDefault();
+    painting.current = true;
+    const { x, y } = getCanvasRelativeCoords(e);
+    mouseCoord.current = { clientX: x, clientY: y };
+    drawLine(e);
+  }
+
   function stopTracking(e){
     e.preventDefault()
     painting.current=false
   }
-  function drawLine(e){
-    e.preventDefault()
-    if(!painting.current) return 
-    ctx.lineWidth=weight
-    ctx.lineCap="round"
-    // ctx.lineJoin= "line"
+  
+  function drawLine(e: MouseEvent) {
+    e.preventDefault();
+    if (!painting.current) return;
+  
+    const { x, y } = getCanvasRelativeCoords(e);
+  
+    ctx.lineWidth = weight;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.moveTo(mouseCoord.current.offsetX, mouseCoord.current.offsetY);
-    ctx.lineTo(e.offsetX, e.offsetY);
-    mouseCoord.current={offsetX:e.offsetX,offsetY:e.offsetY}
-    ctx.strokeStyle= color
+    ctx.moveTo(mouseCoord.current.clientX, mouseCoord.current.clientY);
+    ctx.lineTo(x, y);
+    mouseCoord.current = { clientX: x, clientY: y };
+    ctx.strokeStyle = color;
     ctx.stroke();
-    
-    console.log(e, painting)
+    console.log(e)
+    ctx.scale(scaled,scaled)
   }
+  
  
 
   canvasPointer?.addEventListener("mousedown",startTracking)
@@ -51,15 +72,15 @@ useEffect(()=>{
   
     canvasPointer?.removeEventListener("mouseup",stopTracking)
     
-    canvasPointer?.removeEventListener("mousemove",draw)
+    canvasPointer?.removeEventListener("mousemove",drawLine)
   }
 },[])
   
 
   return (
-    <div className='h-screen w-screen border-2 border-solid border-red-500'>
-      <canvas height={1080} width={1920}
- className="border-2 border-solid border-red-500 h-full w-full" id="myCanvas" ></canvas>
+    <div className='w-screen h-screen border-5 border-solid border-green-500 p-0 m-0 relative' id="parentDiv">
+      <canvas
+ className="border-2 border-solid border-red-500 cursor-crosshair absolute" id="myCanvas" ></canvas>
     </div>
   );
 }
